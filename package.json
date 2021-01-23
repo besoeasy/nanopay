@@ -1,0 +1,29 @@
+{
+  "name": "nanopay",
+  "version": "1.1.4",
+  "description": "NANO Currency Easy To Use Payment Module",
+  "main": "index.js",
+  "dependencies": {
+    "axios": "^0.21.1",
+    "bignumber.js": "^9.0.1",
+    "nanocurrency": "^2.5.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/besoeasy/nanopay.git"
+  },
+  "keywords": [
+    "nano",
+    "crypto"
+  ],
+  "author": "besoeasy",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/besoeasy/nanopay/issues"
+  },
+  "homepage": "https://github.com/besoeasy/nanopay#readme"
+}
