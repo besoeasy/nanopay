@@ -1,9 +1,13 @@
 # nanopay
 
-
 ```javascript
-
 const nano = require('nanopay');
+
+//init package with custom nodes
+nano.init('nano node url', 'work solver');
+
+// init nano with defaults
+nano.init('', '');
 
 var seed = '12d2dde836172e21fcfbff2dd94c83e8ae8e53979a90e13def8f010a767e5d0c';
 var nanoaddress = 'nano_3gj8wk5r3wqonhirr81mxyhy5bumj4t3x1qopgqpsj3q3ik4p7ucg7trkx78';
