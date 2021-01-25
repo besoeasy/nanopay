@@ -2,8 +2,13 @@ const nanocurrency = require('nanocurrency');
 const BigNumber = require('bignumber.js');
 const axios = require('axios');
 
-let NANONODE = 'https://api.nanex.cc';
-let WORKNODE = 'https://nanovault.io/api/node-api';
+let NANONODE = '';
+let WORKNODE = '';
+
+function init(var1, var2) {
+	NANONODE = var1 || 'https://mynano.ninja/api/node';
+	WORKNODE = var2;
+}
 
 async function gensecretKey(seed, index) {
 	return nanocurrency.deriveSecretKey(seed, parseInt(index));
@@ -261,4 +266,4 @@ async function hybirdWork(blockblock) {
 		});
 }
 
-module.exports = { hybirdWork, recentBlockcache, fetchPending, sendPercent, send, addressInfo, blockInfo, gensecretKey, secretKeytoaddr };
+module.exports = { init, hybirdWork, recentBlockcache, fetchPending, sendPercent, send, addressInfo, blockInfo, gensecretKey, secretKeytoaddr };
