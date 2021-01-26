@@ -38,4 +38,4 @@ main();
 
 ## Pow Work
 
-Coming Soon
+https://besoeasy.com/api/nanopow
