@@ -6,7 +6,7 @@ let NANONODE = '';
 let WORKNODE = '';
 
 function init(var1, var2) {
-	NANONODE = var1 || 'https://mynano.ninja/api/node';
+	NANONODE = var1;
 	WORKNODE = var2;
 }
 
