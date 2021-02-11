@@ -256,8 +256,9 @@ async function hybirdWork(blockblock) {
 	return axios
 		.post(WORKNODE, { action: 'work_generate', difficulty: 'fffffff800000000', hash: blockblock })
 		.then(function (response) {
-			console.log('gpu work : ' + response.data.work);
-			return response.data.work;
+				console.log('gpu work : ');
+		                console.log(response.data);
+			        return response.data.work;
 		})
 		.catch(async function (error) {
 			pow = await nanocurrency.computeWork(blockblock, (ComputeWorkParams = { workThreshold: 'fffffff800000000' }));
