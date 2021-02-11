@@ -255,22 +255,19 @@ async function recentBlockcache(secretKey) {
 async function hybirdWork(blockblock) {
 	return axios
 		.post(WORKNODE, { action: 'work_generate', difficulty: 'fffffff800000000', hash: blockblock })
-		.then(function (response) {
-				console.log('gpu work : ');
-		                console.log(response.data);
+		.then(async function (response) {
+			console.log('Getting Work From Remote.............');
+			console.log(response.data);
 
-if(response.data.work){
-			        return response.data.work;
-
-   }else{
-			pow = await nanocurrency.computeWork(blockblock, (ComputeWorkParams = { workThreshold: 'fffffff800000000' }));
-			return pow;
-
-   }
+			if (response.data.work) {
+				return response.data.work;
+			} else {
+				pow = await nanocurrency.computeWork(blockblock, (ComputeWorkParams = { workThreshold: 'fffffff800000000' }));
+				return pow;
+			}
 		})
 		.catch(async function (error) {
 			pow = await nanocurrency.computeWork(blockblock, (ComputeWorkParams = { workThreshold: 'fffffff800000000' }));
-			console.log('cpu work : ' + pow);
 			return pow;
 		});
 }
