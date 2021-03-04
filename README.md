@@ -30,14 +30,14 @@ async function main() {
 	var done1 = await nano.fetchPending(secrateKey);
 
 	if (done1.hash) {
-		console.log('fetched : ' + done.hash);
+		console.log('fetched : ' + done1);
 	}
 
           // send nano to address
 	var done2 = await nano.send(secrateKey, nanoaddress, amount);
 
 	if (done2.hash) {
-		console.log('sent : ' + done.hash);
+		console.log('sent : ' + done2);
 	}
 }
 
