@@ -1,5 +1,3 @@
-# nanopay
-
 ```javascript
 //load module
 const nano = require('nanopay');
