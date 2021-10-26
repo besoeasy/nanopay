@@ -3,21 +3,31 @@ const BigNumber = require('bignumber.js');
 const axios = require('axios');
 
 let NANONODE = '';
-let WORKNODE = '';
 
-function init(var1, var2) {
-	NANONODE = var1;
-	WORKNODE = var2;
+let WORKNODE = {
+	node: null,
+	user: null,
+	api_key: null,
+};
+
+let nano_pow = {};
+
+function init(nodeurl, worknodedata) {
+	NANONODE = nodeurl;
+	WORKNODE.node = worknodedata.node || null;
+	WORKNODE.user = worknodedata.user || null;
+	WORKNODE.api_key = worknodedata.api_key || null;
 }
 
-async function gensecretKey(seed, index) {
-	return nanocurrency.deriveSecretKey(seed, parseInt(index));
-}
-
-async function secretKeytoaddr(secretKey) {
+async function secretKeytoAddress(secretKey) {
 	var publicKey = await nanocurrency.derivePublicKey(secretKey);
 	var address = await nanocurrency.deriveAddress(publicKey, { useNanoPrefix: true });
 	return address;
+}
+
+async function secretKeytopublicKey(secretKey) {
+	var publicKey = await nanocurrency.derivePublicKey(secretKey);
+	return publicKey;
 }
 
 async function blockInfo(block) {
@@ -133,7 +143,7 @@ async function block_info(blockid) {
 }
 
 async function send(secretKey, sendto, amount) {
-	var address = await secretKeytoaddr(secretKey);
+	var address = await secretKeytoAddress(secretKey);
 	var sddsf_address = await accountdig(address);
 	var cbal = sddsf_address.balance;
 	var previous = sddsf_address.frontier;
@@ -164,7 +174,7 @@ async function send(secretKey, sendto, amount) {
 }
 
 async function sendPercent(secretKey, sendto, per) {
-	var address = await secretKeytoaddr(secretKey);
+	var address = await secretKeytoAddress(secretKey);
 	var percentage = (100 - per) / 100;
 
 	var sddsf_address = await accountdig(address);
@@ -194,7 +204,8 @@ async function sendPercent(secretKey, sendto, per) {
 }
 
 async function fetchPending(secretKey) {
-	var address = await secretKeytoaddr(secretKey);
+	var publicKey = await secretKeytopublicKey(secretKey);
+	var address = await secretKeytoAddress(secretKey);
 
 	if ((await pendingblockcount(address)) > 0) {
 		var peniong = await pendingblock(address);
@@ -232,44 +243,56 @@ async function fetchPending(secretKey) {
 	}
 }
 
-async function recentBlockcache(secretKey) {
-	var address = await secretKeytoaddr(secretKey);
-
+async function cachePOW(secretKey) {
+	var publicKey = await secretKeytopublicKey(secretKey);
+	var address = await secretKeytoAddress(secretKey);
 	var sddsf_address = await accountdig(address);
 
 	if (sddsf_address.error) {
-		var cbal = '0';
-		var previous = null;
 		var pow = await hybirdWork(publicKey);
-		var xx = publicKey;
+		nano_pow[publicKey] = pow;
 	} else {
-		var cbal = sddsf_address.balance;
 		var previous = sddsf_address.frontier;
 		var pow = await hybirdWork(previous);
-		var xx = previous;
-	}
+		nano_pow[previous] = pow;
 
-	return xx;
+		console.log('Block Cached : ' + previous + '   Work : ' + pow);
+	}
 }
 
 async function hybirdWork(blockblock) {
-	return axios
-		.post(WORKNODE, { action: 'work_generate', difficulty: 'fffffff800000000', hash: blockblock })
-		.then(async function (response) {
-			console.log('Getting Work From Remote.............');
-			console.log(response.data);
+	if (nano_pow[blockblock]) {
+		console.log('POW : cache work found..');
 
-			if (response.data.work) {
-				return response.data.work;
-			} else {
+		return nano_pow[blockblock];
+	} else if (!WORKNODE.node || !WORKNODE.user || !WORKNODE.api_key) {
+		console.log('POW : Wrong node data using CPU..');
+
+		pow = await nanocurrency.computeWork(blockblock, (ComputeWorkParams = { workThreshold: 'fffffff800000000' }));
+		return pow;
+	} else {
+		return axios
+			.post(WORKNODE.node, { action: 'work_generate', difficulty: 'fffffff800000000', hash: blockblock, user: WORKNODE.user, api_key: WORKNODE.api_key })
+			.then(async function (response) {
+				console.log('POW : Getting Work From Remote..');
+				console.log(response.data);
+
+				if (response.data.work) {
+					return response.data.work;
+				} else {
+					console.log('falling back to CPU..');
+
+					pow = await nanocurrency.computeWork(blockblock, (ComputeWorkParams = { workThreshold: 'fffffff800000000' }));
+					return pow;
+				}
+			})
+			.catch(async function (error) {
+				console.log('falling back to CPU..');
+
 				pow = await nanocurrency.computeWork(blockblock, (ComputeWorkParams = { workThreshold: 'fffffff800000000' }));
 				return pow;
-			}
-		})
-		.catch(async function (error) {
-			pow = await nanocurrency.computeWork(blockblock, (ComputeWorkParams = { workThreshold: 'fffffff800000000' }));
-			return pow;
-		});
+			});
+	}
 }
 
-module.exports = { init, hybirdWork, recentBlockcache, fetchPending, sendPercent, send, addressInfo, blockInfo, gensecretKey, secretKeytoaddr };
+module.exports = { init, hybirdWork, fetchPending, sendPercent, send, addressInfo, blockInfo, secretKeytoAddress, secretKeytopublicKey, cachePOW };
