@@ -31,11 +31,11 @@ async function secretKeytopublicKey(secretKey) {
 }
 
 async function blockInfo(block) {
-	return axios.post(NANONODE, {			json_block: 'true',
-	action: 'blocks_info', hashes: [block] }).then(function (response) {
-		return response.data;
+	return axios.post(NANONODE, { json_block: 'true', action: 'blocks_info', hashes: [block] }).then(function (response) {
+		return response.data.blocks[block];
 	});
 }
+
 
 async function addressInfo(address, count) {
 	return axios
