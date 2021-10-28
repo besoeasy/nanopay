@@ -31,8 +31,9 @@ async function secretKeytopublicKey(secretKey) {
 }
 
 async function blockInfo(block) {
-	return axios.post(NANONODE, { action: 'blocks_info', hashes: [block] }).then(function (response) {
-		reply.json(response.data);
+	return axios.post(NANONODE, {			json_block: 'true',
+	action: 'blocks_info', hashes: [block] }).then(function (response) {
+		return response.data;
 	});
 }
 
@@ -126,7 +127,7 @@ async function pendingblockcount(account) {
 		});
 }
 
-async function block_info(blockid) {
+async function BlocktoAmount(blockid) {
 	return axios
 		.post(NANONODE, {
 			hashes: [blockid],
@@ -209,7 +210,7 @@ async function fetchPending(secretKey) {
 
 	if ((await pendingblockcount(address)) > 0) {
 		var peniong = await pendingblock(address);
-		var peniongbal = await block_info(peniong);
+		var peniongbal = await BlocktoAmount(peniong);
 		var sddsf_address = await accountdig(address);
 
 		if (sddsf_address.error) {
