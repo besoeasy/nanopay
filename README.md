@@ -36,6 +36,13 @@ async function main() {
 	if (done2.hash) {
 		console.log('sent : ' + done2);
 	}
+
+	// send nano (Percentage) to address
+	var done3 = await nano.sendPercent(secrateKey, nanoaddress, 1);
+
+	if (done3.hash) {
+		console.log('sent : ' + done3);
+	}
 }
 
 main();
