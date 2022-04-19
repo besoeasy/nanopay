@@ -8,7 +8,6 @@ nano.init('https://mynano.ninja/api/node', { node: '', user: '', api_key: '' });
 
 var secrateKey = '12d2dde836172e21fcfbff2dd94c83e8ae8e53979a90e13def8f010a767e5d0c';
 var nanoaddress = 'nano_3gj8wk5r3wqonhirr81mxyhy5bumj4t3x1qopgqpsj3q3ik4p7ucg7trkx78';
-var amount = 0.0000001;
 
 async function main() {
 	//generate address from secretKey
@@ -31,7 +30,7 @@ async function main() {
 	}
 
 	// send nano to address
-	var done2 = await nano.send(secrateKey, nanoaddress, amount);
+	var done2 = await nano.send(secrateKey, nanoaddress, 0.0001);
 
 	if (done2.hash) {
 		console.log('sent : ' + done2);
