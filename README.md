@@ -1,4 +1,15 @@
+## Install
+
+```
+
+npm i besoeasy/nanopay
+
+```
+
+## Usage
+
 ```javascript
+
 //load module
 const nano = require('nanopay');
 
