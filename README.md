@@ -2,7 +2,7 @@
 
 ```
 
-npm i besoeasy/nanopay
+npm i nanopay
 
 ```
 
