@@ -1,7 +1,9 @@
 //load module
 const nano = require('./index');
 
-nano.init('https://mynano.ninja/api/node');
+const nanoNode = 'https://nault.nanos.cc/proxy';
+
+nano.init(nanoNode);
 
 var secrateKey = '12d2dde836172e21fcfbff2dd94c83e8ae8e53979a90e13def8f010a767e5d0c';
 
@@ -20,6 +22,11 @@ async function main() {
 
 	//cache pow for next txn
 	var blockTOcache = accountData.info.frontier;
+
+	// BLOCK, NODE, USER, APIKEY
+	await nano.cachePOW_gpu(blockTOcache, nanoNode, 'user', 'apikey');
+
+	// BLOCK
 	await nano.cachePOW_cpu(blockTOcache);
 
 	//recieve pending transactions
