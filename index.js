@@ -4,30 +4,18 @@ const axios = require('axios');
 
 let NANONODE = '';
 
-let WORKNODE = {
-	node: null,
-	user: null,
-	api_key: null,
-};
+let nano_pow_cache = {};
 
-let nano_pow = {};
-
-function init(nodeurl, worknodedata) {
+function init(nodeurl) {
 	NANONODE = nodeurl;
-	WORKNODE.node = worknodedata.node || null;
-	WORKNODE.user = worknodedata.user || null;
-	WORKNODE.api_key = worknodedata.api_key || null;
+	nano_pow_cache = {};
 }
 
-async function secretKeytoAddress(secretKey) {
-	var publicKey = await nanocurrency.derivePublicKey(secretKey);
-	var address = await nanocurrency.deriveAddress(publicKey, { useNanoPrefix: true });
-	return address;
-}
+function secretKeyDecode(secretKey) {
+	var publicKey = nanocurrency.derivePublicKey(secretKey);
+	var address = nanocurrency.deriveAddress(publicKey, { useNanoPrefix: true });
 
-async function secretKeytopublicKey(secretKey) {
-	var publicKey = await nanocurrency.derivePublicKey(secretKey);
-	return publicKey;
+	return { publicKey: publicKey, address: address };
 }
 
 async function blockInfo(block) {
@@ -36,13 +24,12 @@ async function blockInfo(block) {
 	});
 }
 
-
 async function addressInfo(address, count) {
 	return axios
 		.post(NANONODE, {
 			action: 'account_history',
 			account: address,
-			count: count || 100,
+			count: count || 10,
 		})
 		.then(function (response) {
 			return axios
@@ -144,7 +131,7 @@ async function BlocktoAmount(blockid) {
 }
 
 async function send(secretKey, sendto, amount) {
-	var address = await secretKeytoAddress(secretKey);
+	const { address } = await secretKeyDecode(secretKey);
 	var sddsf_address = await accountdig(address);
 	var cbal = sddsf_address.balance;
 	var previous = sddsf_address.frontier;
@@ -175,7 +162,7 @@ async function send(secretKey, sendto, amount) {
 }
 
 async function sendPercent(secretKey, sendto, per) {
-	var address = await secretKeytoAddress(secretKey);
+	const { address } = await secretKeyDecode(secretKey);
 	var percentage = (100 - per) / 100;
 
 	var sddsf_address = await accountdig(address);
@@ -205,8 +192,7 @@ async function sendPercent(secretKey, sendto, per) {
 }
 
 async function fetchPending(secretKey) {
-	var publicKey = await secretKeytopublicKey(secretKey);
-	var address = await secretKeytoAddress(secretKey);
+	const { address, publicKey } = await secretKeyDecode(secretKey);
 
 	if ((await pendingblockcount(address)) > 0) {
 		var peniong = await pendingblock(address);
@@ -244,56 +230,50 @@ async function fetchPending(secretKey) {
 	}
 }
 
-async function cachePOW(secretKey) {
-	var publicKey = await secretKeytopublicKey(secretKey);
-	var address = await secretKeytoAddress(secretKey);
-	var sddsf_address = await accountdig(address);
-
-	if (sddsf_address.error) {
-		var pow = await hybirdWork(publicKey);
-		nano_pow[publicKey] = pow;
-	} else {
-		var previous = sddsf_address.frontier;
-		var pow = await hybirdWork(previous);
-		nano_pow[previous] = pow;
-
-		console.log('Block Cached : ' + previous + '   Work : ' + pow);
-	}
-}
-
 async function hybirdWork(blockblock) {
-	if (nano_pow[blockblock]) {
-		console.log('POW : cache work found..');
+	if (nano_pow_cache[blockblock]) {
+		console.log('cache found', true);
 
-		return nano_pow[blockblock];
-	} else if (!WORKNODE.node || !WORKNODE.user || !WORKNODE.api_key) {
-		console.log('POW : Wrong node data using CPU..');
-
-		pow = await nanocurrency.computeWork(blockblock, (ComputeWorkParams = { workThreshold: 'fffffff800000000' }));
-		return pow;
+		return nano_pow_cache[blockblock];
 	} else {
-		return axios
-			.post(WORKNODE.node, { action: 'work_generate', difficulty: 'fffffff800000000', hash: blockblock, user: WORKNODE.user, api_key: WORKNODE.api_key })
-			.then(async function (response) {
-				console.log('POW : Getting Work From Remote..');
-				console.log(response.data);
+		console.log('cache found', false);
 
-				if (response.data.work) {
-					return response.data.work;
-				} else {
-					console.log('falling back to CPU..');
-
-					pow = await nanocurrency.computeWork(blockblock, (ComputeWorkParams = { workThreshold: 'fffffff800000000' }));
-					return pow;
-				}
-			})
-			.catch(async function (error) {
-				console.log('falling back to CPU..');
-
-				pow = await nanocurrency.computeWork(blockblock, (ComputeWorkParams = { workThreshold: 'fffffff800000000' }));
-				return pow;
-			});
+		var pow = await nanocurrency.computeWork(blockblock, (ComputeWorkParams = { workThreshold: 'fffffff800000000' }));
+		return pow;
 	}
 }
 
-module.exports = { init, hybirdWork, fetchPending, sendPercent, send, addressInfo, blockInfo, secretKeytoAddress, secretKeytopublicKey, cachePOW };
+async function cachePOW_cpu(blockblock) {
+	console.log('cachePOW CPU', blockblock);
+	var pow = await nanocurrency.computeWork(blockblock, (ComputeWorkParams = { workThreshold: 'fffffff800000000' }));
+	nano_pow_cache[blockblock] = pow;
+}
+
+async function cachePOW_gpu(blockblock, node, user, api_key) {
+	console.log('cachePOW SERVER', blockblock);
+
+	axios.post(node, { action: 'work_generate', difficulty: 'fffffff800000000', hash: blockblock, user: user, api_key: api_key }).then(async function (response) {
+		console.log('POW : Getting Work From Remote..');
+		console.log(response.data);
+
+		if (response.data.work) {
+			nano_pow_cache[blockblock] = response.data.work;
+		} else {
+			await cachePOW_cpu(blockblock);
+		}
+	});
+}
+
+function rawToNano(raw) {
+	var x = new BigNumber(raw);
+	var xx = x.dividedBy('1000000000000000000000000000000').toFixed(20);
+	return xx;
+}
+
+function nanoToRaw(nano) {
+	var x = new BigNumber(nano);
+	var xx = x.multipliedBy('1000000000000000000000000000000').toFixed(0);
+	return xx;
+}
+
+module.exports = { init, cachePOW_cpu, cachePOW_gpu, hybirdWork, fetchPending, sendPercent, send, addressInfo, blockInfo, secretKeyDecode, rawToNano, nanoToRaw };
