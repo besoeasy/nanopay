@@ -27,11 +27,8 @@ async function main() {
 	//cache pow for next txn
 	var blockTOcache = accountData.info.frontier;
 
-	// BLOCK, NODE, USER, APIKEY
-	await nano.cachePOW_server(blockTOcache, nanoNode, 'user', 'apikey');
-
 	// BLOCK
-	await nano.cachePOW_cpu(blockTOcache);
+	await nano.cachePOW(blockTOcache);
 
 	//recieve pending transactions
 	var done1 = await nano.fetchPending(secrateKey);

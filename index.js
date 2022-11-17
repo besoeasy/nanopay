@@ -243,25 +243,11 @@ async function hybirdWork(blockblock) {
 	}
 }
 
-async function cachePOW_cpu(blockblock) {
+async function cachePOW(blockblock) {
 	console.log('cachePOW CPU', blockblock);
 	var pow = await nanocurrency.computeWork(blockblock, (ComputeWorkParams = { workThreshold: 'fffffff800000000' }));
 	nano_pow_cache[blockblock] = pow;
-}
-
-async function cachePOW_server(blockblock, node, user, api_key) {
-	console.log('cachePOW SERVER', blockblock);
-
-	axios.post(node, { action: 'work_generate', difficulty: 'fffffff800000000', hash: blockblock, user: user, api_key: api_key }).then(async function (response) {
-		console.log('POW : Getting Work From Remote..');
-		console.log(response.data);
-
-		if (response.data.work) {
-			nano_pow_cache[blockblock] = response.data.work;
-		} else {
-			await cachePOW_cpu(blockblock);
-		}
-	});
+	return pow;
 }
 
 function rawToNano(raw) {
@@ -276,4 +262,4 @@ function nanoToRaw(nano) {
 	return xx;
 }
 
-module.exports = { init, nano_pow_cache, cachePOW_cpu, cachePOW_server, hybirdWork, fetchPending, sendPercent, send, addressInfo, blockInfo, secretKeyDecode, rawToNano, nanoToRaw };
+module.exports = { init, nano_pow_cache, cachePOW, hybirdWork, fetchPending, sendPercent, send, addressInfo, blockInfo, secretKeyDecode, rawToNano, nanoToRaw };

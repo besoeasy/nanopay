@@ -1,6 +1,6 @@
 {
   "name": "nanopay",
-  "version": "4.0.2",
+  "version": "4.0.4",
   "description": "NANO Currency Easy To Use Payment Module",
   "main": "index.js",
   "dependencies": {
@@ -10,7 +10,7 @@
   },
   "devDependencies": {},
   "scripts": {
-    "test": ""
+    "publish": "npm i && npm publish"
   },
   "repository": {
     "type": "git",
