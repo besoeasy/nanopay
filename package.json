@@ -1,6 +1,6 @@
 {
   "name": "nanopay",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "NANO Currency Easy To Use Payment Module",
   "main": "index.js",
   "dependencies": {

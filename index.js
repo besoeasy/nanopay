@@ -249,7 +249,7 @@ async function cachePOW_cpu(blockblock) {
 	nano_pow_cache[blockblock] = pow;
 }
 
-async function cachePOW_gpu(blockblock, node, user, api_key) {
+async function cachePOW_server(blockblock, node, user, api_key) {
 	console.log('cachePOW SERVER', blockblock);
 
 	axios.post(node, { action: 'work_generate', difficulty: 'fffffff800000000', hash: blockblock, user: user, api_key: api_key }).then(async function (response) {
@@ -276,4 +276,4 @@ function nanoToRaw(nano) {
 	return xx;
 }
 
-module.exports = { init, cachePOW_cpu, cachePOW_gpu, hybirdWork, fetchPending, sendPercent, send, addressInfo, blockInfo, secretKeyDecode, rawToNano, nanoToRaw };
+module.exports = { init, cachePOW_cpu, cachePOW_server, hybirdWork, fetchPending, sendPercent, send, addressInfo, blockInfo, secretKeyDecode, rawToNano, nanoToRaw };
