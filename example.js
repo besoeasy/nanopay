@@ -8,8 +8,12 @@ nano.init(nanoNode);
 var secrateKey = '12d2dde836172e21fcfbff2dd94c83e8ae8e53979a90e13def8f010a767e5d0c';
 
 async function main() {
-	const datas = await nano.rawToNano(1000000000000000000000000000000);
-	console.log(datas);
+	//check if block has chacked work
+	var checkblockpow = nano.nano_pow_cache['31948550222FD4F7E6FE50F55D9F4D1779A55AC06D1CC990C18EC77E78346897'];
+	console.log(checkblockpow);
+
+	const convertraw = await nano.rawToNano(1000000000000000000000000000000);
+	console.log(convertraw);
 
 	//generate address from secretKey
 	const { address, publicKey } = await nano.secretKeyDecode(secrateKey);
@@ -24,7 +28,7 @@ async function main() {
 	var blockTOcache = accountData.info.frontier;
 
 	// BLOCK, NODE, USER, APIKEY
-	await nano.cachePOW_gpu(blockTOcache, nanoNode, 'user', 'apikey');
+	await nano.cachePOW_server(blockTOcache, nanoNode, 'user', 'apikey');
 
 	// BLOCK
 	await nano.cachePOW_cpu(blockTOcache);

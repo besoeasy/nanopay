@@ -276,4 +276,4 @@ function nanoToRaw(nano) {
 	return xx;
 }
 
-module.exports = { init, cachePOW_cpu, cachePOW_server, hybirdWork, fetchPending, sendPercent, send, addressInfo, blockInfo, secretKeyDecode, rawToNano, nanoToRaw };
+module.exports = { init, nano_pow_cache, cachePOW_cpu, cachePOW_server, hybirdWork, fetchPending, sendPercent, send, addressInfo, blockInfo, secretKeyDecode, rawToNano, nanoToRaw };
