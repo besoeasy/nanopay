@@ -14,7 +14,7 @@ function init(nodeurl) {
 
 async function postToNanoNode(data) {
 	try {
-		const response = await axios.post(nanoNodeUrl, data);
+		const response = await axios.post(NANONODE, data);
 		return response.data;
 	} catch (error) {
 		console.error(error);
@@ -203,4 +203,4 @@ function nanoToRaw(nano) {
 	return new BigNumber(nano).multipliedBy(NANO_CONVERSION_FACTOR).toFixed(0);
 }
 
-module.exports = { init, cachePOW, hybirdWork, fetchPending, sendPercent, send, addressInfo, blockInfo, secretKeyDecode, rawToNano, nanoToRaw, setNanoPowCache, clearNanoPowCache };
+module.exports = { init, cachePOW, hybridWork, fetchPending, sendPercent, send, addressInfo, blockInfo, secretKeyDecode, rawToNano, nanoToRaw, setNanoPowCache, clearNanoPowCache };
