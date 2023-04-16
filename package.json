@@ -1,16 +1,12 @@
 {
   "name": "nanopay",
-  "version": "4.0.4",
+  "version": "4.0.5",
   "description": "NANO Currency Easy To Use Payment Module",
   "main": "index.js",
   "dependencies": {
     "axios": "^0.24.0",
     "bignumber.js": "^9.0.1",
     "nanocurrency": "^2.5.0"
-  },
-  "devDependencies": {},
-  "scripts": {
-    "publish": "npm i && npm publish"
   },
   "repository": {
     "type": "git",
