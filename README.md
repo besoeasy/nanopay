@@ -1,3 +1,8 @@
+# NANOPAY
+
+NanoPay is a simple and easy-to-use Node.js library for interacting with the Nano cryptocurrency network. This library allows you to perform various wallet-related tasks such as sending Nano, fetching account history, and more.
+
+
 ## Install
 
 ```
