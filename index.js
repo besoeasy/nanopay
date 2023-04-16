@@ -2,264 +2,205 @@ const nanocurrency = require('nanocurrency');
 const BigNumber = require('bignumber.js');
 const axios = require('axios');
 
-let NANONODE = '';
+const WORK_THRESHOLD = 'fffffff800000000';
+const NANO_CONVERSION_FACTOR = new BigNumber('1000000000000000000000000000000');
+const nanoPowCache = new Map();
 
-let nano_pow_cache = {};
+let NANONODE = '';
 
 function init(nodeurl) {
 	NANONODE = nodeurl;
-	nano_pow_cache = {};
+}
+
+async function postToNanoNode(data) {
+	try {
+		const response = await axios.post(nanoNodeUrl, data);
+		return response.data;
+	} catch (error) {
+		console.error(error);
+		return null;
+	}
 }
 
 function secretKeyDecode(secretKey) {
-	var publicKey = nanocurrency.derivePublicKey(secretKey);
-	var address = nanocurrency.deriveAddress(publicKey, { useNanoPrefix: true });
+	const publicKey = nanocurrency.derivePublicKey(secretKey);
+	const address = nanocurrency.deriveAddress(publicKey, { useNanoPrefix: true });
 
-	return { publicKey: publicKey, address: address };
+	return { publicKey, address };
 }
 
 async function blockInfo(block) {
-	return axios.post(NANONODE, { json_block: 'true', action: 'blocks_info', hashes: [block] }).then(function (response) {
-		return response.data.blocks[block];
-	});
+	const data = { json_block: 'true', action: 'blocks_info', hashes: [block] };
+	return postToNanoNode(data).then((response) => response.blocks[block]);
 }
 
-async function addressInfo(address, count) {
-	return axios
-		.post(NANONODE, {
-			action: 'account_history',
-			account: address,
-			count: count || 10,
-		})
-		.then(function (response) {
-			return axios
-				.post(NANONODE, {
-					action: 'account_info',
-					account: address,
-				})
-				.then(function (response2) {
-					return axios
-						.post(NANONODE, {
-							action: 'pending',
-							account: address,
-						})
-						.then(function (response3) {
-							return {
-								address: address,
-								info: response2.data,
-								pendingblocks: response3.data.blocks,
-								history: response.data.history,
-							};
-						});
-				});
-		});
+async function addressInfo(address, count = 10) {
+	const accountHistoryData = { action: 'account_history', account: address, count };
+	const accountInfoData = { action: 'account_info', account: address };
+	const pendingData = { action: 'pending', account: address };
+
+	const [historyResponse, infoResponse, pendingResponse] = await Promise.all([postToNanoNode(accountHistoryData), postToNanoNode(accountInfoData), postToNanoNode(pendingData)]);
+
+	return {
+		address,
+		info: infoResponse,
+		pendingblocks: pendingResponse.blocks,
+		history: historyResponse.history,
+	};
 }
 
 async function publish(blockjson) {
-	return axios
-		.post(NANONODE, {
-			action: 'process',
-			json_block: 'true',
-			block: blockjson,
-		})
-		.then(function (response) {
-			return response.data;
-		})
-		.catch(function (error) {
-			console.log(error);
-		});
+	const data = { action: 'process', json_block: 'true', block: blockjson };
+	return postToNanoNode(data);
 }
 
 async function accountdig(account) {
-	return axios
-		.post(NANONODE, {
-			account: account,
-			action: 'account_info',
-		})
-		.then(function (response) {
-			return response.data;
-		})
-		.catch(function (error) {
-			console.log(error);
-		});
+	const data = { account, action: 'account_info' };
+	return postToNanoNode(data);
 }
 
 async function pendingblock(account) {
-	return axios
-		.post(NANONODE, {
-			account: account,
-			action: 'pending',
-		})
-		.then(function (response) {
-			return response.data.blocks[0];
-		})
-		.catch(function (error) {
-			console.log(error);
-		});
+	const data = { account, action: 'pending' };
+	return postToNanoNode(data).then((response) => response.blocks[0]);
 }
 
 async function pendingblockcount(account) {
-	return axios
-		.post(NANONODE, {
-			account: account,
-			action: 'pending',
-		})
-		.then(function (response) {
-			x = response.data.blocks;
-
-			return x.length;
-		})
-		.catch(function (error) {
-			console.log(error);
-		});
+	const data = { account, action: 'pending' };
+	return postToNanoNode(data).then((response) => response.blocks.length);
 }
 
 async function BlocktoAmount(blockid) {
-	return axios
-		.post(NANONODE, {
-			hashes: [blockid],
-			json_block: 'true',
-			action: 'blocks_info',
-			pending: 'true',
-		})
-		.then(function (response) {
-			return response.data.blocks[blockid].amount;
-		})
-		.catch(function (error) {
-			console.log(error);
-		});
+	const data = { hashes: [blockid], json_block: 'true', action: 'blocks_info', pending: 'true' };
+	return postToNanoNode(data).then((response) => response.blocks[blockid].amount);
 }
 
-async function send(secretKey, sendto, amount) {
+async function send(secretKey, sendTo, amount) {
 	const { address } = await secretKeyDecode(secretKey);
-	var sddsf_address = await accountdig(address);
-	var cbal = sddsf_address.balance;
-	var previous = sddsf_address.frontier;
-	var pow = await hybirdWork(previous);
+	const accountInfo = await accountdig(address);
+	const currentBalance = new BigNumber(accountInfo.balance);
+	const previous = accountInfo.frontier;
+	const pow = await hybridWork(previous);
 
-	var x = new BigNumber('1000000000000000000000000000000');
-	var xx = x.multipliedBy(amount).toFixed();
-	var puki = new BigNumber(cbal);
-	var balance = puki.minus(xx);
+	const amountToSend = new BigNumber(amount).multipliedBy('1000000000000000000000000000000');
+	const newBalance = currentBalance.minus(amountToSend);
 
-	var balancex = balance.toFixed(0);
-
-	if (balancex >= 0) {
-		dd = {
-			balance: balancex,
-			link: sendto,
-			previous: previous,
+	if (newBalance.isGreaterThanOrEqualTo(0)) {
+		const blockData = {
+			balance: newBalance.toFixed(0),
+			link: sendTo,
+			previous,
 			representative: address,
 			work: pow,
 		};
-		var xxx = await nanocurrency.createBlock(secretKey, dd);
-		var retr = await publish(xxx.block);
+		const createdBlock = await nanocurrency.createBlock(secretKey, blockData);
+		return publish(createdBlock.block);
 	} else {
-		var retr = { error: 'no_balance' };
+		return { error: 'no_balance' };
 	}
-
-	return retr;
 }
 
-async function sendPercent(secretKey, sendto, per) {
+async function sendPercent(secretKey, sendTo, percent) {
 	const { address } = await secretKeyDecode(secretKey);
-	var percentage = (100 - per) / 100;
+	const accountInfo = await accountdig(address);
+	const currentBalance = new BigNumber(accountInfo.balance);
+	const previous = accountInfo.frontier;
+	const pow = await hybridWork(previous);
 
-	var sddsf_address = await accountdig(address);
-	var cbal = sddsf_address.balance;
-	var previous = sddsf_address.frontier;
-	var pow = await hybirdWork(previous);
-
-	var puki = new BigNumber(cbal);
-	var balance = puki.multipliedBy(percentage);
-	var balancex = balance.toFixed(0);
-
-	if (balancex >= 0) {
-		dd = {
-			balance: balancex,
-			link: sendto,
-			previous: previous,
+	const newBalance = currentBalance.multipliedBy(1 - percent / 100);
+	if (newBalance.isGreaterThanOrEqualTo(0)) {
+		const blockData = {
+			balance: newBalance.toFixed(0),
+			link: sendTo,
+			previous,
 			representative: address,
 			work: pow,
 		};
-		var xxx = await nanocurrency.createBlock(secretKey, dd);
-		var retr = await publish(xxx.block);
+		const createdBlock = await nanocurrency.createBlock(secretKey, blockData);
+		return publish(createdBlock.block);
 	} else {
-		var retr = { error: 'no_balance' };
+		return { error: 'no_balance' };
 	}
-
-	return retr;
 }
 
 async function fetchPending(secretKey) {
 	const { address, publicKey } = await secretKeyDecode(secretKey);
 
-	if ((await pendingblockcount(address)) > 0) {
-		var peniong = await pendingblock(address);
-		var peniongbal = await BlocktoAmount(peniong);
-		var sddsf_address = await accountdig(address);
+	const pendingBlockCount = await pendingblockcount(address);
+	if (pendingBlockCount > 0) {
+		const pendingBlock = await pendingblock(address);
+		const pendingBlockBalance = await BlocktoAmount(pendingBlock);
+		const accountInfo = await accountdig(address);
 
-		if (sddsf_address.error) {
-			var cbal = '0';
-			var previous = null;
-			var pow = await hybirdWork(publicKey);
-		} else {
-			var cbal = sddsf_address.balance;
-			var previous = sddsf_address.frontier;
-			var pow = await hybirdWork(previous);
-		}
+		const currentBalance = accountInfo.error ? new BigNumber(0) : new BigNumber(accountInfo.balance);
+		const previous = accountInfo.error ? null : accountInfo.frontier;
+		const pow = await hybridWork(previous || publicKey);
 
-		var puki = new BigNumber(cbal);
-		var balance = puki.plus(peniongbal);
-		var balancex = balance.toFixed();
+		const newBalance = currentBalance.plus(pendingBlockBalance);
 
-		dd = {
-			balance: balancex,
-			link: peniong,
-			previous: previous,
+		const blockData = {
+			balance: newBalance.toFixed(),
+			link: pendingBlock,
+			previous,
 			representative: address,
 			work: pow,
 		};
 
-		var xxx = await nanocurrency.createBlock(secretKey, dd);
-		var retr = await publish(xxx.block);
-
-		return retr;
+		const createdBlock = await nanocurrency.createBlock(secretKey, blockData);
+		return publish(createdBlock.block);
 	} else {
-		return '{ "hash" : 0 }';
+		return { hash: 0 };
 	}
 }
 
-async function hybirdWork(blockblock) {
-	if (nano_pow_cache[blockblock]) {
-		console.log('cache found', true);
+function setNanoPowCache(block, pow) {
+	nanoPowCache.set(block, pow);
+}
 
-		return nano_pow_cache[blockblock];
+function clearNanoPowCache() {
+	nanoPowCache.clear();
+}
+
+async function hybridWork(block) {
+	if (nanoPowCache.has(block)) {
+		console.log('Cache found', true);
+		return nanoPowCache.get(block);
 	} else {
-		console.log('cache found', false);
-
-		var pow = await nanocurrency.computeWork(blockblock, (ComputeWorkParams = { workThreshold: 'fffffff800000000' }));
+		console.log('Cache found', false);
+		const pow = await nanocurrency.computeWork(block, { workThreshold: WORK_THRESHOLD });
 		return pow;
 	}
 }
 
-async function cachePOW(blockblock) {
-	console.log('cachePOW CPU', blockblock);
-	var pow = await nanocurrency.computeWork(blockblock, (ComputeWorkParams = { workThreshold: 'fffffff800000000' }));
-	nano_pow_cache[blockblock] = pow;
-	return pow;
+async function cachePOW(input) {
+	if (nanocurrency.checkAddress(input)) {
+		try {
+			const accountInfo = await accountdig(input);
+			const frontier = accountInfo.frontier;
+			if (frontier) {
+				await cachePOW(frontier);
+				console.log('Cached PoW for account frontier:', frontier);
+			} else {
+				console.log('No frontier found for account:', input);
+			}
+		} catch (error) {
+			console.error('Error caching PoW for account:', error);
+		}
+	} else {
+		console.log('cachePOW CPU', input);
+		if (!nanoPowCache.has(input)) {
+			const pow = await nanocurrency.computeWork(input, { workThreshold: WORK_THRESHOLD });
+			nanoPowCache.set(input, pow);
+		}
+		return nanoPowCache.get(input);
+	}
 }
 
 function rawToNano(raw) {
-	var x = new BigNumber(raw);
-	var xx = x.dividedBy('1000000000000000000000000000000').toFixed(20);
-	return xx;
+	return new BigNumber(raw).dividedBy(NANO_CONVERSION_FACTOR).toFixed(20);
 }
 
 function nanoToRaw(nano) {
-	var x = new BigNumber(nano);
-	var xx = x.multipliedBy('1000000000000000000000000000000').toFixed(0);
-	return xx;
+	return new BigNumber(nano).multipliedBy(NANO_CONVERSION_FACTOR).toFixed(0);
 }
 
-module.exports = { init, nano_pow_cache, cachePOW, hybirdWork, fetchPending, sendPercent, send, addressInfo, blockInfo, secretKeyDecode, rawToNano, nanoToRaw };
+module.exports = { init, cachePOW, hybirdWork, fetchPending, sendPercent, send, addressInfo, blockInfo, secretKeyDecode, rawToNano, nanoToRaw, setNanoPowCache, clearNanoPowCache };
